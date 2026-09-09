@@ -5,6 +5,62 @@ const ctx = canvas.getContext('2d');
 const W = 800;
 const H = 600;
 
+// ── Skins ──────────────────────────────────────────────────────────────────────
+const SKINS = {
+  classic: {
+    label: 'Clásica',
+    color: '#ffffff',
+    fill: 'rgba(255, 255, 255, 0.08)',
+    flame: '#ff8200',
+  },
+  neon: {
+    label: 'Neón',
+    color: '#d866ff',
+    fill: 'rgba(216, 102, 255, 0.18)',
+    flame: '#5cf2ff',
+  },
+  solar: {
+    label: 'Solar',
+    color: '#ffd166',
+    fill: 'rgba(255, 209, 102, 0.2)',
+    flame: '#ff5c5c',
+  },
+};
+const SKIN_STORAGE_KEY = 'asteroids-skin';
+let selectedSkin = 'classic';
+
+function loadSkin() {
+  try {
+    const savedSkin = localStorage.getItem(SKIN_STORAGE_KEY);
+    if (savedSkin && SKINS[savedSkin]) selectedSkin = savedSkin;
+  } catch (_) {
+    // El juego sigue funcionando si el navegador bloquea el almacenamiento.
+  }
+}
+
+function selectSkin(skinId) {
+  if (!SKINS[skinId]) return;
+  selectedSkin = skinId;
+  try {
+    localStorage.setItem(SKIN_STORAGE_KEY, skinId);
+  } catch (_) {
+    // La selección permanece activa durante esta sesión.
+  }
+
+  document.querySelectorAll('.skin-button').forEach(button => {
+    const isActive = button.dataset.skin === selectedSkin;
+    button.style.setProperty('--skin-color', SKINS[button.dataset.skin].color);
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
+loadSkin();
+document.querySelectorAll('.skin-button').forEach(button => {
+  button.addEventListener('click', () => selectSkin(button.dataset.skin));
+});
+selectSkin(selectedSkin);
+
 // ── Input ─────────────────────────────────────────────────────────────────────
 const keys = {};
 const justPressed = {};
@@ -279,7 +335,10 @@ class Ship {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-    ctx.strokeStyle = this.speedBoostTimer > 0 ? '#5cf2ff' : '#fff';
+    const skin = SKINS[selectedSkin];
+    const shipColor = this.speedBoostTimer > 0 ? '#5cf2ff' : skin.color;
+    ctx.strokeStyle = shipColor;
+    ctx.fillStyle   = skin.fill;
     ctx.lineWidth   = 1.5;
     ctx.lineJoin    = 'round';
 
@@ -290,6 +349,7 @@ class Ship {
     ctx.lineTo( -7,  0);   // muesca trasera
     ctx.lineTo(-12,  9);   // ala derecha
     ctx.closePath();
+    ctx.fill();
     ctx.stroke();
 
     // Llama del propulsor
@@ -298,7 +358,7 @@ class Ship {
       ctx.moveTo(-8, -4);
       ctx.lineTo(-8 - rand(6, 14), 0);
       ctx.lineTo(-8,  4);
-      ctx.strokeStyle = 'rgba(255, 130, 0, 0.85)';
+      ctx.strokeStyle = skin.flame;
       ctx.stroke();
     }
 

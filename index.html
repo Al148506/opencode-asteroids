@@ -8,18 +8,71 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: #000;
+      color: #fff;
       display: flex;
+      flex-direction: column;
+      gap: 14px;
       align-items: center;
       justify-content: center;
       height: 100vh;
+      padding: 16px;
+      font-family: monospace;
+    }
+    .skin-picker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: min(800px, 100%);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+    .skin-picker-label {
+      color: rgba(255, 255, 255, 0.65);
+      margin-right: 4px;
+    }
+    .skin-options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .skin-button {
+      color: #fff;
+      background: #090909;
+      border: 1px solid #333;
+      border-radius: 3px;
+      cursor: pointer;
+      font: inherit;
+      padding: 7px 10px;
+      transition: border-color 120ms ease, background 120ms ease;
+    }
+    .skin-button:hover,
+    .skin-button:focus-visible {
+      background: #171717;
+      outline: none;
+    }
+    .skin-button.active {
+      background: #181818;
+      border-color: var(--skin-color);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--skin-color), transparent 45%);
     }
     canvas {
       display: block;
       border: 1px solid #222;
+      max-width: 100%;
+      max-height: calc(100vh - 80px);
+      height: auto;
     }
   </style>
 </head>
 <body>
+  <div class="skin-picker" aria-label="Selector de apariencia">
+    <span class="skin-picker-label">Nave:</span>
+    <div class="skin-options">
+      <button class="skin-button" type="button" data-skin="classic">Clásica</button>
+      <button class="skin-button" type="button" data-skin="neon">Neón</button>
+      <button class="skin-button" type="button" data-skin="solar">Solar</button>
+    </div>
+  </div>
   <canvas id="canvas" width="800" height="600"></canvas>
   <script src="game.js"></script>
 </body>
