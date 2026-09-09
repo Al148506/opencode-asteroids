@@ -214,6 +214,42 @@ class SpeedPowerUp {
   }
 }
 
+// ── Power-up de escudo ────────────────────────────────────────────────────────
+class ShieldPowerUp {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 11;
+    this.ttl = 12;
+    this.age = 0;
+    this.dead = false;
+  }
+
+  update(dt) {
+    this.age += dt;
+    this.ttl -= dt;
+    if (this.ttl <= 0) this.dead = true;
+  }
+
+  draw() {
+    const pulse = 1 + Math.sin(this.age * 6) * 0.12;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.scale(pulse, pulse);
+    ctx.strokeStyle = '#b56cff';
+    ctx.fillStyle = 'rgba(181, 108, 255, 0.16)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, 6, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 // ── Ship ──────────────────────────────────────────────────────────────────────
 class Ship {
   constructor() { this.reset(); }
@@ -229,6 +265,7 @@ class Ship {
     this.invincible    = 3;
     this.shootCooldown = 0;
     this.speedBoostTimer = 0;
+    this.shieldTimer = 0;
     this.dead          = false;
   }
 
@@ -237,6 +274,7 @@ class Ship {
     if (this.invincible    > 0) this.invincible    -= dt;
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.speedBoostTimer > 0) this.speedBoostTimer -= dt;
+    if (this.shieldTimer > 0) this.shieldTimer -= dt;
 
     const ROT   = 3.5;   // rad/s
     const THRUST = 260;  // px/s²
@@ -260,6 +298,10 @@ class Ship {
 
   activateSpeedBoost() {
     this.speedBoostTimer = 5;
+  }
+
+  activateShield() {
+    this.shieldTimer = 6;
   }
 
   tryShoot() {
@@ -303,6 +345,21 @@ class Ship {
     }
 
     ctx.restore();
+
+    if (this.shieldTimer > 0) {
+      const pulse = 1 + Math.sin(this.shieldTimer * 8) * 0.06;
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.scale(pulse, pulse);
+      ctx.strokeStyle = 'rgba(181, 108, 255, 0.9)';
+      ctx.fillStyle = 'rgba(181, 108, 255, 0.08)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 }
 
@@ -452,23 +509,40 @@ function update(dt) {
         newAsteroids.push(...a.split());
         if (a.isShootingStar) scoreMultiplierTimer = 5;
         if (Math.random() < 0.18) powerUps.push(new SpeedPowerUp(a.x, a.y));
+        if (Math.random() < 0.12) powerUps.push(new ShieldPowerUp(a.x, a.y));
       }
     }
   }
+
+  // El escudo destruye el asteroide al proteger la nave.
+  if (ship.shieldTimer > 0) {
+    for (const a of asteroids) {
+      if (!a.dead && dist(ship, a) < ship.radius + a.radius * 0.82) {
+        a.dead = true;
+        const scoreMultiplier = scoreMultiplierTimer > 0 ? 2 : 1;
+        score += POINTS[a.size] * scoreMultiplier;
+        explode(a.x, a.y, a.size * 5);
+        newAsteroids.push(...a.split());
+        if (a.isShootingStar) scoreMultiplierTimer = 5;
+      }
+    }
+  }
+
   asteroids = asteroids.filter(a => !a.dead).concat(newAsteroids);
   bullets   = bullets.filter(b => !b.dead);
 
   // Nave vs power-up
   for (const powerUp of powerUps) {
     if (dist(ship, powerUp) < ship.radius + powerUp.radius) {
-      ship.activateSpeedBoost();
+      if (powerUp instanceof ShieldPowerUp) ship.activateShield();
+      else ship.activateSpeedBoost();
       powerUp.dead = true;
     }
   }
   powerUps = powerUps.filter(powerUp => !powerUp.dead);
 
   // Nave vs asteroide
-  if (ship.invincible <= 0) {
+  if (ship.invincible <= 0 && ship.shieldTimer <= 0) {
     for (const a of asteroids) {
       if (dist(ship, a) < ship.radius + a.radius * 0.82) {
         killShip();
@@ -517,6 +591,11 @@ function drawHUD() {
   if (scoreMultiplierTimer > 0) {
     ctx.fillStyle = '#f33';
     ctx.fillText(`PUNTOS 2X ${scoreMultiplierTimer.toFixed(1)}s`, W / 2, 68);
+  }
+
+  if (ship.shieldTimer > 0) {
+    ctx.fillStyle = '#b56cff';
+    ctx.fillText(`ESCUDO ${ship.shieldTimer.toFixed(1)}s`, W / 2, 88);
   }
 
   for (let i = 0; i < lives; i++)

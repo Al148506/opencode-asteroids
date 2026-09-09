@@ -45,3 +45,4 @@ Luego visita `http://localhost:3000`.
 - Partículas de explosión al destruir asteroides
 - Estrella fugaz roja: se mueve rápidamente, desaparece después de 8 segundos y activa puntuación doble durante 5 segundos al ser destruida
 - Power-up `Velocidad`: duplica el movimiento de la nave durante 5 segundos
+- Power-up `Escudo`: protege la nave durante 6 segundos y destruye los asteroides al colisionar con ellos
