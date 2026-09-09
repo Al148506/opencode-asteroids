@@ -118,6 +118,60 @@ class Asteroid {
   }
 }
 
+// ── Estrella fugaz ─────────────────────────────────────────────────────────────
+class ShootingStar extends Asteroid {
+  constructor(x, y) {
+    super(x, y, 1);
+    this.isShootingStar = true;
+    this.ttl = 8;
+
+    const angle = rand(0, Math.PI * 2);
+    const speed = 230 + rand(-20, 20);
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+  }
+
+  update(dt) {
+    super.update(dt);
+    this.ttl -= dt;
+    if (this.ttl <= 0) this.dead = true;
+  }
+
+  split() {
+    return [];
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot);
+    ctx.strokeStyle = '#f33';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const angle = (i / 10) * Math.PI * 2 - Math.PI / 2;
+      const radius = i % 2 === 0 ? 15 : 6;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    // Estela orientada en sentido contrario al movimiento.
+    ctx.strokeStyle = 'rgba(255, 70, 70, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-this.vx * 0.08, -this.vy * 0.08);
+    ctx.lineTo(-this.vx * 0.22, -this.vy * 0.22);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 // ── Power-up de velocidad ─────────────────────────────────────────────────────
 class SpeedPowerUp {
   constructor(x, y) {
@@ -287,6 +341,7 @@ class Particle {
 // ── Estado del juego ──────────────────────────────────────────────────────────
 let ship, bullets, asteroids, particles, powerUps;
 let score, lives, level;
+let scoreMultiplierTimer;
 let state;      // 'playing' | 'dead' | 'gameover'
 let deadTimer;
 
@@ -300,6 +355,15 @@ function spawnAsteroids(count) {
     } while (Math.hypot(x - W / 2, y - H / 2) < SAFE_DIST);
     asteroids.push(new Asteroid(x, y, 3));
   }
+
+  if (Math.random() < 0.5) {
+    let x, y;
+    do {
+      x = rand(0, W);
+      y = rand(0, H);
+    } while (Math.hypot(x - W / 2, y - H / 2) < SAFE_DIST);
+    asteroids.push(new ShootingStar(x, y));
+  }
 }
 
 function initGame() {
@@ -309,6 +373,7 @@ function initGame() {
   particles = [];
   powerUps  = [];
   score  = 0;
+  scoreMultiplierTimer = 0;
   lives  = 3;
   level  = 1;
   state  = 'playing';
@@ -364,6 +429,7 @@ function update(dt) {
   }
 
   ship.update(dt);
+  if (scoreMultiplierTimer > 0) scoreMultiplierTimer -= dt;
   bullets.forEach(b => b.update(dt));
   asteroids.forEach(a => a.update(dt));
   particles.forEach(p => p.update(dt));
@@ -380,9 +446,11 @@ function update(dt) {
       if (!a.dead && !b.dead && dist(b, a) < a.radius) {
         b.dead = true;
         a.dead = true;
-        score += POINTS[a.size];
+        const scoreMultiplier = scoreMultiplierTimer > 0 ? 2 : 1;
+        score += POINTS[a.size] * scoreMultiplier;
         explode(a.x, a.y, a.size * 5);
         newAsteroids.push(...a.split());
+        if (a.isShootingStar) scoreMultiplierTimer = 5;
         if (Math.random() < 0.18) powerUps.push(new SpeedPowerUp(a.x, a.y));
       }
     }
@@ -444,6 +512,11 @@ function drawHUD() {
   if (ship.speedBoostTimer > 0) {
     ctx.fillStyle = '#5cf2ff';
     ctx.fillText(`VELOCIDAD ${ship.speedBoostTimer.toFixed(1)}s`, W / 2, 48);
+  }
+
+  if (scoreMultiplierTimer > 0) {
+    ctx.fillStyle = '#f33';
+    ctx.fillText(`PUNTOS 2X ${scoreMultiplierTimer.toFixed(1)}s`, W / 2, 68);
   }
 
   for (let i = 0; i < lives; i++)

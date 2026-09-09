@@ -43,3 +43,5 @@ Luego visita `http://localhost:3000`.
 - 3 vidas con invencibilidad temporal al reaparecer (parpadeo)
 - Asteroides se parten en fragmentos más pequeños al ser destruidos
 - Partículas de explosión al destruir asteroides
+- Estrella fugaz roja: se mueve rápidamente, desaparece después de 8 segundos y activa puntuación doble durante 5 segundos al ser destruida
+- Power-up `Velocidad`: duplica el movimiento de la nave durante 5 segundos
