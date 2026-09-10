@@ -12,18 +12,32 @@ const SKINS = {
     color: '#ffffff',
     fill: 'rgba(255, 255, 255, 0.08)',
     flame: '#ff8200',
+    scale: 1,
+    powerUpTime: 1,
   },
   neon: {
     label: 'Neón',
     color: '#d866ff',
     fill: 'rgba(216, 102, 255, 0.18)',
     flame: '#5cf2ff',
+    scale: 1,
+    powerUpTime: 1,
   },
   solar: {
     label: 'Solar',
     color: '#ffd166',
     fill: 'rgba(255, 209, 102, 0.2)',
     flame: '#ff5c5c',
+    scale: 1,
+    powerUpTime: 1,
+  },
+  violeta: {
+    label: 'Violeta',
+    color: '#b967ff',
+    fill: 'rgba(185, 103, 255, 0.18)',
+    flame: '#9dff8a',
+    scale: 2,
+    powerUpTime: 2,
   },
 };
 const SKIN_STORAGE_KEY = 'asteroids-skin';
@@ -349,13 +363,16 @@ class TripleShotPowerUp {
 class Ship {
   constructor() { this.reset(); }
 
+  get radius() {
+    return 12 * SKINS[selectedSkin].scale;
+  }
+
   reset() {
     this.x      = W / 2;
     this.y      = H / 2;
     this.angle  = -Math.PI / 2;
     this.vx     = 0;
     this.vy     = 0;
-    this.radius = 12;
     this.thrusting     = false;
     this.invincible    = 3;
     this.shootCooldown = 0;
@@ -394,21 +411,21 @@ class Ship {
   }
 
   activateSpeedBoost() {
-    this.speedBoostTimer = 5;
+    this.speedBoostTimer = 5 * SKINS[selectedSkin].powerUpTime;
   }
 
   activateShield() {
-    this.shieldTimer = 6;
+    this.shieldTimer = 6 * SKINS[selectedSkin].powerUpTime;
   }
 
   activateTripleShot() {
-    this.tripleShotTimer = 5;
+    this.tripleShotTimer = 5 * SKINS[selectedSkin].powerUpTime;
   }
 
   tryShoot() {
     if (this.shootCooldown > 0 || this.dead) return [];
     this.shootCooldown = 0.2;
-    const NOSE = 21;
+    const NOSE = 21 * SKINS[selectedSkin].scale;
     const ox = this.x + Math.cos(this.angle) * NOSE;
     const oy = this.y + Math.sin(this.angle) * NOSE;
     if (this.tripleShotTimer <= 0) return [new Bullet(ox, oy, this.angle)];
@@ -433,6 +450,7 @@ class Ship {
     ctx.fillStyle   = skin.fill;
     ctx.lineWidth   = 1.5;
     ctx.lineJoin    = 'round';
+    ctx.scale(skin.scale, skin.scale);
 
     // Silueta clásica: triángulo con muesca trasera
     ctx.beginPath();
@@ -465,7 +483,7 @@ class Ship {
       ctx.fillStyle = 'rgba(181, 108, 255, 0.08)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(0, 0, 25, 0, Math.PI * 2);
+      ctx.arc(0, 0, 25 * skin.scale, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       ctx.restore();
