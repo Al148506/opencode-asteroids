@@ -117,14 +117,27 @@ jobs:
       - name: Run opencode
         shell: bash
         run: |
+          set +e
+      
           opencode run "$(cat /tmp/prompt.txt)" \
-            --model opencode-go/glm-5.2 \
+            --model opencode/big-pickle \
             --format json \
             --dangerously-skip-permissions \
             > /tmp/events.ndjson 2> /tmp/opencode.log
-          echo "::group::opencode log (last 40 lines)"
-          tail -n 40 /tmp/opencode.log || true
+      
+          status=$?
+      
+          echo "::group::opencode log"
+          cat /tmp/opencode.log || true
           echo "::endgroup::"
+      
+          echo "::group::opencode output"
+          cat /tmp/events.ndjson || true
+          echo "::endgroup::"
+      
+          echo "OpenCode exit code: $status"
+      
+          exit $status
 
       - name: Parse and validate result
         shell: bash
